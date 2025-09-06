@@ -276,7 +276,11 @@ public class StatesToWalkStepsMapper {
           .directionTextNoParens()
           .equals(threeBack.directionTextNoParens());
         if (twoBack.distance() < MAX_ZAG_DISTANCE && isOnSameStreet) {
-          if (isUTurn(twoBack, lastStep)) {
+          // PATCH: keep small middle steps that carry a real (non-derived) name,
+          // e.g., a named footway=crossing. This prevents A–B–A from collapsing to A.
+          if (!twoBack.nameIsDerived()) {
+            // preserve the three separate steps
+          } else if (isUTurn(twoBack, lastStep)) {
             steps.remove(lastIndex - 1);
             processUTurn(lastStep, twoBack);
           } else {
