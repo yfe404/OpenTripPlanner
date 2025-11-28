@@ -169,6 +169,7 @@ public class BuildConfig implements OtpDataStoreConfig {
 
   public final DataOverlayConfig dataOverlay;
   public final double maxStopToShapeSnapDistance;
+  public final double maxTransitToStreetLinkDistance;
   public final Set<String> boardingLocationTags;
   public final DemExtractParametersList dem;
   public final OsmExtractParametersList osm;
@@ -298,6 +299,18 @@ public class BuildConfig implements OtpDataStoreConfig {
         """
       )
       .asDouble(150);
+    maxTransitToStreetLinkDistance = root
+      .of("maxTransitToStreetLinkDistance")
+      .since(V2_7)
+      .summary("Maximum distance for linking transit stops to street network.")
+      .description(
+        """
+        Maximum distance in meters for permanently linking transit stops to the street network.
+        Stops farther than this distance from any street will not be linked, preventing
+        long crow-flies paths in itineraries. Set to 0 to disable the limit (default OTP behavior).
+        """
+      )
+      .asDouble(0);
     multiThreadElevationCalculations = root
       .of("multiThreadElevationCalculations")
       .since(V2_0)

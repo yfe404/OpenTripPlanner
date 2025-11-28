@@ -63,10 +63,6 @@ public class VertexLinker {
   private static final double DUPLICATE_WAY_EPSILON_METERS = 0.001;
   private static final int INITIAL_SEARCH_RADIUS_METERS = 100;
   private static final int MAX_SEARCH_RADIUS_METERS = 1000;
-  // PATCH: Maximum distance (in meters) for permanent stop-to-street linking.
-  // Stops farther than this from the street network will not be linked, preventing
-  // long crow-flies paths in itineraries. Set to 50m as a reasonable tolerance.
-  private static final double MAX_PERMANENT_LINK_DISTANCE_METERS = 50.0;
   // exit a complex area maximally via this many exit points
   private static final int MAX_AREA_LINKS = 300;
   private static final GeometryFactory GEOMETRY_FACTORY = GeometryUtils.getGeometryFactory();
@@ -80,6 +76,12 @@ public class VertexLinker {
   private final SiteRepository siteRepository;
   private final VertexFactory vertexFactory;
 
+  /**
+   * Maximum distance in meters for permanent stop-to-street linking.
+   * Set to 0 to disable the limit (default OTP behavior).
+   */
+  private final double maxPermanentLinkDistanceMeters;
+
   // TODO Temporary code until we refactor WalkableAreaBuilder  (#3152)
   private boolean addExtraEdgesToAreas = true;
 
@@ -92,10 +94,26 @@ public class VertexLinker {
     SiteRepository siteRepository,
     EdgeSpatialIndex edgeSpatialIndex
   ) {
+    this(graph, siteRepository, edgeSpatialIndex, 0);
+  }
+
+  /**
+   * Construct a new VertexLinker with a custom maximum permanent link distance.
+   *
+   * @param maxPermanentLinkDistanceMeters Maximum distance in meters for permanent stop-to-street
+   *                                        linking. Set to 0 to disable the limit.
+   */
+  public VertexLinker(
+    Graph graph,
+    SiteRepository siteRepository,
+    EdgeSpatialIndex edgeSpatialIndex,
+    double maxPermanentLinkDistanceMeters
+  ) {
     this.edgeSpatialIndex = edgeSpatialIndex;
     this.graph = graph;
     this.vertexFactory = new VertexFactory(graph);
     this.siteRepository = siteRepository;
+    this.maxPermanentLinkDistanceMeters = maxPermanentLinkDistanceMeters;
   }
 
   public void linkVertexPermanently(
@@ -313,11 +331,12 @@ public class VertexLinker {
       return Set.of();
     }
 
-    // PATCH: For permanent links (transit stop linking), filter out edges that are too far.
+    // For permanent links (transit stop linking), filter out edges that are too far.
     // This prevents long crow-flies paths in itineraries when stops are not close to streets.
-    if (scope == Scope.PERMANENT) {
+    // Only apply this filter if maxPermanentLinkDistanceMeters is set (> 0).
+    if (scope == Scope.PERMANENT && maxPermanentLinkDistanceMeters > 0) {
       final double maxDistanceDegrees = SphericalDistanceLibrary.metersToDegrees(
-        MAX_PERMANENT_LINK_DISTANCE_METERS
+        maxPermanentLinkDistanceMeters
       );
       candidateEdges = candidateEdges
         .stream()

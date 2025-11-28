@@ -283,8 +283,19 @@ public class Graph implements Serializable {
    *           - something that should go into the index; Hence, inconsistent data.
    */
   public void index(SiteRepository siteRepository) {
+    index(siteRepository, 0);
+  }
+
+  /**
+   * Perform indexing with a custom maximum distance for linking transit stops to streets.
+   *
+   * @param siteRepository The site repository
+   * @param maxTransitToStreetLinkDistance Maximum distance in meters for permanent stop-to-street
+   *                                        linking. Set to 0 to disable the limit (default).
+   */
+  public void index(SiteRepository siteRepository, double maxTransitToStreetLinkDistance) {
     LOG.info("Index street model...");
-    streetIndex = new StreetIndex(this, siteRepository);
+    streetIndex = new StreetIndex(this, siteRepository, maxTransitToStreetLinkDistance);
     LOG.info("Index street model complete.");
   }
 

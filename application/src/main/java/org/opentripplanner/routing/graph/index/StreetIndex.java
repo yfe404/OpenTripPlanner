@@ -74,10 +74,20 @@ public class StreetIndex {
    * Should only be called by the graph.
    */
   public StreetIndex(Graph graph, SiteRepository siteRepository) {
+    this(graph, siteRepository, 0);
+  }
+
+  /**
+   * Should only be called by the graph.
+   *
+   * @param maxTransitToStreetLinkDistance Maximum distance in meters for permanent stop-to-street
+   *                                        linking. Set to 0 to disable the limit.
+   */
+  public StreetIndex(Graph graph, SiteRepository siteRepository, double maxTransitToStreetLinkDistance) {
     this.siteRepository = siteRepository;
     this.edgeSpatialIndex = new EdgeSpatialIndex();
     this.verticesTree = new HashGridSpatialIndex<>();
-    this.vertexLinker = new VertexLinker(graph, siteRepository, edgeSpatialIndex);
+    this.vertexLinker = new VertexLinker(graph, siteRepository, edgeSpatialIndex, maxTransitToStreetLinkDistance);
     this.transitStopVertices = toImmutableMap(graph.getVerticesOfType(TransitStopVertex.class));
     this.stationCentroidVertices = createStationCentroidVertexMap(graph);
     postSetup(graph.getVertices());
