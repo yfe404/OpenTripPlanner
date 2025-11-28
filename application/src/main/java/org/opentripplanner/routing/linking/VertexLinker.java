@@ -63,6 +63,10 @@ public class VertexLinker {
   private static final double DUPLICATE_WAY_EPSILON_METERS = 0.001;
   private static final int INITIAL_SEARCH_RADIUS_METERS = 100;
   private static final int MAX_SEARCH_RADIUS_METERS = 1000;
+  // PATCH: Maximum distance (in meters) for permanent stop-to-street linking.
+  // Stops farther than this from the street network will not be linked, preventing
+  // long crow-flies paths in itineraries. Set to 50m as a reasonable tolerance.
+  private static final double MAX_PERMANENT_LINK_DISTANCE_METERS = 50.0;
   // exit a complex area maximally via this many exit points
   private static final int MAX_AREA_LINKS = 300;
   private static final GeometryFactory GEOMETRY_FACTORY = GeometryUtils.getGeometryFactory();
@@ -307,6 +311,21 @@ public class VertexLinker {
   ) {
     if (candidateEdges.isEmpty()) {
       return Set.of();
+    }
+
+    // PATCH: For permanent links (transit stop linking), filter out edges that are too far.
+    // This prevents long crow-flies paths in itineraries when stops are not close to streets.
+    if (scope == Scope.PERMANENT) {
+      final double maxDistanceDegrees = SphericalDistanceLibrary.metersToDegrees(
+        MAX_PERMANENT_LINK_DISTANCE_METERS
+      );
+      candidateEdges = candidateEdges
+        .stream()
+        .filter(ce -> ce.distanceDegreesLat <= maxDistanceDegrees)
+        .toList();
+      if (candidateEdges.isEmpty()) {
+        return Set.of();
+      }
     }
 
     Set<DistanceTo<StreetEdge>> closestEdges = getClosestEdgesPerMode(
